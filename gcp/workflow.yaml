@@ -1,0 +1,71 @@
+main:
+  params: [args]
+  steps:
+    - init:
+        assign:
+          - project: ${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}
+    - create_tpu_vm:
+        call: createTPUVM
+        args:
+          project: ${project}
+          location: ${args.location}
+          node_name: ${args.node_name}
+          accelerator_type: ${args.accelerator_type}
+          runtime_version: ${args.runtime_version}
+        result: tpu_result
+    - sleep: 
+        call: sys.sleep
+        args:
+          seconds: 60  # Delay for 1 min(s)
+    - delete_tpu_vm:
+        call: deleteTPUVM
+        args:
+          project: ${project}
+          location: ${args.location}
+          node_name: ${args.node_name}
+        result: delete_result
+    - return_result:
+        return: ${delete_result}
+
+createTPUVM:
+  params: [project, location, node_name, accelerator_type, runtime_version]
+  steps:
+    - call_tpu_api:
+        call: http.post
+        args:
+          url: ${"https://tpu.googleapis.com/v2/projects/" + project + "/locations/" + location + "/nodes?node_id=" + node_name}
+          body:
+            accelerator_type: ${accelerator_type}
+            runtime_version: ${runtime_version}
+            network_config:
+              enable_external_ips: true
+            shielded_instance_config:
+              enable_secure_boot: true
+            scheduling_config:
+              preemptible: true
+          headers:
+            Content-Type: "application/json"
+          auth:
+            type: OAuth2
+        result: api_response
+    - return_response:
+        return: ${api_response}
+
+deleteTPUVM:
+  params: [project, location, node_name]
+  steps:
+    - call_tpu_api:
+        call: http.delete
+        args:
+          url: ${"https://tpu.googleapis.com/v2/projects/" + project + "/locations/" + location + "/nodes/" + node_name}
+          auth:
+            type: OAuth2
+        result: api_response
+    - return_response:
+        return: ${api_response}
+
+error:
+  params: [error]
+  steps:
+    - return_error:
+        return: ${error}
