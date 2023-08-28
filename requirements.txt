@@ -1,0 +1,9 @@
+https://storage.googleapis.com/cloud-tpu-tpuvm-artifacts/wheels/libtpu-nightly/libtpu_nightly-0.1.dev20230309-py3-none-any.whl
+tensorflow==2.12.0
+jax==0.4.6
+jaxlib==0.4.6
+git+https://github.com/sanchit-gandhi/whisper-jax.git
+datasets
+soundfile
+librose
+cached-property
