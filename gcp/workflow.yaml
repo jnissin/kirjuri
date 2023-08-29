@@ -27,6 +27,7 @@ main:
     - return_result:
         return: ${delete_result}
 
+
 createTPUVM:
   params: [project, location, node_name, accelerator_type, runtime_version]
   steps:
@@ -51,6 +52,7 @@ createTPUVM:
     - return_response:
         return: ${api_response}
 
+
 deleteTPUVM:
   params: [project, location, node_name]
   steps:
@@ -63,6 +65,84 @@ deleteTPUVM:
         result: api_response
     - return_response:
         return: ${api_response}
+
+
+waitForInstanceMetadata:
+  params: [project, zone, instance_name, metadata_key, metadata_value, start_time, max_duration_sec, polling_interval_sec]
+  steps:
+    - get_instance_data:
+        call: googleapis.compute.v1.instances.get
+        args:
+          project: ${project}
+          zone: ${zone}
+          instance: ${instance_name}
+        result: instance
+
+    - find_instance_metadata:
+        call: instanceHasMetadata
+        args:
+          metadata: instance.metadata
+          key: metadata_key
+          value: metadata_value
+        result: metadata_value_found
+
+    - choose_action:
+        switch:
+          - condition: ${metadata_value_found}
+            return: true
+          - condition: ${sys.now() - start_time < max_duration_sec}
+            steps:
+              - sleep:
+                  call: sys.sleep
+                  args:
+                    seconds: ${polling_interval_sec}
+              - recurse:
+                  call: waitForInstanceMetadata
+                  args:
+                    project: ${project}
+                    zone: ${zone}
+                    instance_name: ${instance_name}
+                    metadata_key: ${metadata_key}
+                    metadata_value: ${metadata_value}
+                    start_time: ${start_time}
+                    max_duration_sec: ${max_duration_sec}
+                    polling_interval_sec: ${polling_interval_sec}
+          - condition: true
+            return: false
+
+
+instanceHasMetadata:
+  params: [metadata, key, value]
+  steps:
+    - loop_step:
+        for:
+          value: item
+          in: ${metadata.items}
+          steps:
+            - compare_step:
+                switch:
+                  - condition: ${item.key == key and item.value == value}
+                    return: true
+    - end_of_loop_step:
+        return: false
+
+
+bucketHasData:
+  params: [bucket]
+  steps:
+    - list_objects:
+        call: http.get
+        args:
+          url: ${"https://storage.googleapis.com/storage/v1/b/" + bucket + "/o"}
+          auth:
+            type: OAuth2
+        result: bucket_data
+    - check_objects:
+        switch:
+          - condition: ${len(bucket_data.items) > 0}
+            return: true
+          - condition: ${len(bucket_data.items) == 0}
+            return: false
 
 error:
   params: [error]
