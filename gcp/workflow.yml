@@ -4,68 +4,88 @@ main:
     - init:
         assign:
           - project: ${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}
-    - create_tpu_vm:
-        call: createTPUVM
+    - create_compute_gpu_vm:
+        call: createComputeGPUVM
         args:
           project: ${project}
-          location: ${args.location}
-          node_name: ${args.node_name}
-          accelerator_type: ${args.accelerator_type}
-          runtime_version: ${args.runtime_version}
+          region: ${args.region}
+          zone: ${args.zone}
+          instance_name: ${args.instance_name}
+          machine_type: "n1-standard-8"
+          accelerator_type: "nvidia-tesla-t4"
         result: tpu_result
     - sleep: 
         call: sys.sleep
         args:
-          seconds: 60  # Delay for 1 min(s)
-    - delete_tpu_vm:
-        call: deleteTPUVM
+          seconds: 1800  # Delay for 30 min(s)
+    - delete_compute_gpu_vm:
+        call: deleteComputeGPUVM
         args:
           project: ${project}
-          location: ${args.location}
-          node_name: ${args.node_name}
+          zone: ${args.zone}
+          instance_name: ${args.instance_name}
         result: delete_result
     - return_result:
         return: ${delete_result}
 
-
-createTPUVM:
-  params: [project, location, node_name, accelerator_type, runtime_version]
+createComputeGPUVM:
+  params: [project, region, zone, instance_name, machine_type, accelerator_type]
   steps:
-    - call_tpu_api:
-        call: http.post
+    - create_instance:
+        call: googleapis.compute.v1.instances.insert
         args:
-          url: ${"https://tpu.googleapis.com/v2/projects/" + project + "/locations/" + location + "/nodes?node_id=" + node_name}
+          project: ${project}
+          zone: ${zone}
           body:
-            accelerator_type: ${accelerator_type}
-            runtime_version: ${runtime_version}
-            network_config:
-              enable_external_ips: true
-            shielded_instance_config:
-              enable_secure_boot: true
-            scheduling_config:
+            name: ${instance_name}
+            machineType: ${"zones/" + zone + "/machineTypes/" + machine_type}
+            canIpForward: false
+            deletionProtection: false
+            networkInterfaces:
+              - accessConfigs:
+                  - name: "External NAT"
+                    networkTier: "PREMIUM"
+                stackType: "IPV4_ONLY"
+                subnetwork": ${"projects/" + project + "/regions/" + region + "/subnetworks/default"}
+            disks:
+              - initializeParams:
+                  diskSizeGb: "100"
+                  diskType: ${"projects/" + project + "/zones/" + zone + "/diskTypes/pd-balanced"}
+                  sourceImage: "projects/ml-images/global/images/c0-deeplearning-common-gpu-v20230807-debian-11-py310"
+                boot: true
+                autoDelete: true
+            guestAccelerators:
+              - acceleratorType: ${"projects/" + project + "/zones/" + zone + "/acceleratorTypes/" + accelerator_type}
+                acceleratorCount: 1
+            reservationAffinity:
+              consumeReservationType: "ANY_RESERVATION"
+            scheduling:
+              automaticRestart: false
+              instanceTerminationAction: "DELETE"
+              maxRunDuration:
+                seconds": "14400"
+              provisioningModel: "SPOT"
               preemptible: true
-          headers:
-            Content-Type: "application/json"
-          auth:
-            type: OAuth2
+            shieldedInstanceConfig:
+              enableIntegrityMonitoring: true
+              enableSecureBoot: false
+              enableVtpm: true
         result: api_response
     - return_response:
         return: ${api_response}
 
-
-deleteTPUVM:
-  params: [project, location, node_name]
+deleteComputeGPUVM:
+  params: [project, zone, instance_name]
   steps:
-    - call_tpu_api:
-        call: http.delete
+    - delete_instance:
+        call: googleapis.compute.v1.instances.delete
         args:
-          url: ${"https://tpu.googleapis.com/v2/projects/" + project + "/locations/" + location + "/nodes/" + node_name}
-          auth:
-            type: OAuth2
+          project: ${project}
+          zone: ${zone}
+          instance: ${instance_name}
         result: api_response
     - return_response:
         return: ${api_response}
-
 
 waitForInstanceMetadata:
   params: [project, zone, instance_name, metadata_key, metadata_value, start_time, max_duration_sec, polling_interval_sec]
