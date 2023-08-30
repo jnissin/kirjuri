@@ -1,12 +1,14 @@
 #!/bin/bash
 
 CONTAINER_URL="<container-url>"
+ARTIFACT_REGISTRY_LOCATION="<artifact-registry-location>"
 
 # Update TPU VM instance 'application-status' metadata to 'RUNNING'
 curl -X PUT "http://metadata.google.internal/computeMetadata/v1/instance/attributes/application-status" \
   -H "Metadata-Flavor: Google" \
   -d "RUNNING"
 
+gcloud auth configure-docker $ARTIFACT_REGISTRY_LOCATION-docker.pkg.dev
 docker pull $CONTAINER_URL
 docker run --rm --network="host" --privileged $CONTAINER_URL
 
