@@ -4,6 +4,20 @@ main:
     - init:
         assign:
           - project: ${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}
+    - get_container_name_secret:
+        call: googleapis.secretmanager.v1.projects.secrets.versions.accessString
+        args:
+          project_id: ${project}
+          secret_id: "kirjuri-transcription-engine-container-name"
+          version: "latest"
+        result: container_name
+    - get_startup_script_gs_uri_secret:
+        call: googleapis.secretmanager.v1.projects.secrets.versions.accessString
+        args:
+          project_id: ${project}
+          secret_id: "kirjuri-transcription-engine-startup-script-gs-uri"
+          version: "latest"
+        result: startup_script_gs_uri
     - create_compute_gpu_vm:
         call: createComputeGPUVM
         args:
@@ -13,6 +27,8 @@ main:
           instance_name: ${args.instance_name}
           machine_type: "n1-standard-8"
           accelerator_type: "nvidia-tesla-t4"
+          container_name: ${container_name}
+          startup_script_gs_uri: ${startup_script_gs_uri}
         result: tpu_result
     - sleep: 
         call: sys.sleep
@@ -29,7 +45,7 @@ main:
         return: ${delete_result}
 
 createComputeGPUVM:
-  params: [project, region, zone, instance_name, machine_type, accelerator_type]
+  params: [project, region, zone, instance_name, machine_type, accelerator_type, container_name, startup_script_gs_uri]
   steps:
     - create_instance:
         call: googleapis.compute.v1.instances.insert
@@ -61,15 +77,38 @@ createComputeGPUVM:
               consumeReservationType: "ANY_RESERVATION"
             scheduling:
               automaticRestart: false
-              instanceTerminationAction: "DELETE"
               maxRunDuration:
                 seconds": "14400"
-              provisioningModel: "SPOT"
-              preemptible: true
+              provisioningModel: "STANDARD"
+              preemptible: false
+              onHostMaintenance: "TERMINATE"
             shieldedInstanceConfig:
               enableIntegrityMonitoring: true
               enableSecureBoot: false
               enableVtpm: true
+            metadata:
+              items:
+                - key: "startup-script"
+                  value: |-
+                    #!/bin/bash
+                    echo "Copying startup payload script from GCS .."
+                    gsutil cp gs://kirjuri-scripts/transcription-engine/startup.sh execute_transcription_engine.sh
+                    chmod +x execute_transcription_engine.sh
+                    echo "Executing startup payload script .."
+                    nohup ./execute_transcription_engine.sh > execute_transcription_engine.log 2>&1 &
+                    echo "Startup script done"
+                - key: "payload-container-name"
+                  value: ${container_name}
+            serviceAccounts:
+              - email: "905014932322-compute@developer.gserviceaccount.com"
+                scopes:
+                  - "https://www.googleapis.com/auth/devstorage.read_only"
+                  - "https://www.googleapis.com/auth/logging.write"
+                  - "https://www.googleapis.com/auth/monitoring.write"
+                  - "https://www.googleapis.com/auth/servicecontrol"
+                  - "https://www.googleapis.com/auth/service.management.readonly"
+                  - "https://www.googleapis.com/auth/trace.append"
+                  - "https://www.googleapis.com/auth/compute"
         result: api_response
     - return_response:
         return: ${api_response}
