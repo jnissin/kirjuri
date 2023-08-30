@@ -5,5 +5,5 @@ jaxlib==0.4.6
 git+https://github.com/sanchit-gandhi/whisper-jax.git
 datasets
 soundfile
-librose
+librosa
 cached-property
