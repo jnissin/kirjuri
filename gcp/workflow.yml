@@ -223,8 +223,8 @@ waitForInstanceMetadata:
                 call: instanceHasMetadata
                 args:
                   metadata: ${instance.metadata}
-                  key: metadata_key
-                  value: metadata_value
+                  key: ${metadata_key}
+                  value: ${metadata_value}
                 result: metadata_value_found
             - check_metadata_found:
                 switch:
