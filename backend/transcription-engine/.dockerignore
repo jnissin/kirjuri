@@ -1,0 +1,25 @@
+# .dockerignore
+
+# Ignore git and version control
+.git/
+.gitignore
+.svn/
+
+# Ignore build and package directories
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Ignore test and documentation
+tests/
+docs/
+
+# Ignore editor and OS specific files
+*.swp
+*.swo
+.DS_Store
+.idea/
+.vscode/
