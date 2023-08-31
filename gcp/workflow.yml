@@ -18,31 +18,83 @@ main:
           secret_id: "kirjuri-transcription-engine-startup-script-gs-uri"
           version: "latest"
         result: startup_script_gs_uri
-    - create_compute_gpu_vm:
-        call: createComputeGPUVM
+    - check_for_ingestion_data:
+        call: bucketHasData
         args:
-          project: ${project}
-          region: ${args.region}
-          zone: ${args.zone}
-          instance_name: ${args.instance_name}
-          machine_type: "n1-standard-8"
-          accelerator_type: "nvidia-tesla-t4"
-          container_name: ${container_name}
-          startup_script_gs_uri: ${startup_script_gs_uri}
-        result: tpu_result
-    - sleep: 
-        call: sys.sleep
-        args:
-          seconds: 1800  # Delay for 30 min(s)
-    - delete_compute_gpu_vm:
-        call: deleteComputeGPUVM
-        args:
-          project: ${project}
-          zone: ${args.zone}
-          instance_name: ${args.instance_name}
-        result: delete_result
-    - return_result:
-        return: ${delete_result}
+          bucket: "kirjuri-ingestion-db"
+        result: ingestion_has_data
+    - choose_action:
+        switch:
+          - condition: ${ingestion_has_data}
+            steps:
+              - execute_transcription_steps:
+                  call: executeTranscriptionSteps
+                  args:
+                    project: ${project}
+                    region: ${args.region}
+                    zone: ${args.zone}
+                    instance_name: ${args.instance_name}
+                    machine_type: "n1-standard-8"
+                    accelerator_type: "nvidia-tesla-t4"
+                    container_name: ${container_name}
+                    startup_script_gs_uri: ${startup_script_gs_uri}
+                  result: transcription_result
+
+
+executeTranscriptionSteps:
+  params: [project, region, zone, instance_name, machine_type, accelerator_type, container_name, startup_script_gs_uri]
+  steps:
+    - execute:
+        try:
+          steps:
+            - create_compute_gpu_vm:
+                call: createComputeGPUVM
+                args:
+                  project: ${project}
+                  region: ${region}
+                  zone: ${zone}
+                  instance_name: ${instance_name}
+                  machine_type: "n1-standard-8"
+                  accelerator_type: "nvidia-tesla-t4"
+                  container_name: ${container_name}
+                  startup_script_gs_uri: ${startup_script_gs_uri}
+                result: transcription_result
+            - wait_for_instance_creation: 
+                call: sys.sleep
+                args:
+                  seconds: 30
+            - wait_for_application_state:
+                call: waitForInstanceMetadata
+                args:
+                  project: ${project}
+                  zone: ${zone}
+                  instance_name: ${instance_name}
+                  metadata_key: "application-state"
+                  metadata_value: "DONE"
+                  max_duration_sec: 14400
+                  polling_interval_sec: 60
+            - delete_compute_gpu_vm:
+                call: deleteComputeGPUVM
+                args:
+                  project: ${project}
+                  zone: ${zone}
+                  instance_name: ${instance_name}
+                result: delete_result
+            - return_result_success:
+                return: ${delete_result}
+        except:
+          as: ex
+          steps:
+            - on_error_cleanup:
+                call: deleteComputeGPUVM
+                args:
+                  project: ${project}
+                  zone: ${zone}
+                  instance_name: ${instance_name}
+                result: delete_result
+            - raise_error:
+                raise: ${ex}
+
 
 createComputeGPUVM:
   params: [project, region, zone, instance_name, machine_type, accelerator_type, container_name, startup_script_gs_uri]
@@ -126,48 +178,71 @@ deleteComputeGPUVM:
     - return_response:
         return: ${api_response}
 
-waitForInstanceMetadata:
-  params: [project, zone, instance_name, metadata_key, metadata_value, start_time, max_duration_sec, polling_interval_sec]
+
+bucketHasData:
+  params: [bucket]
   steps:
-    - get_instance_data:
-        call: googleapis.compute.v1.instances.get
+    - list_objects:
+        call: googleapis.storage.v1.objects.list
         args:
-          project: ${project}
-          zone: ${zone}
-          instance: ${instance_name}
-        result: instance
+          bucket: ${bucket}
+        result: objects_result
+    - check_objects:
+        try:
+          switch:
+            - condition: ${objects_result == null or len(objects_result.items) == 0}
+              return: false
+            - condition: ${len(objects_result.items) > 0}
+              return: true
+            - condition: true
+              return: false
+        except:
+          as: ex
+          return: false
 
-    - find_instance_metadata:
-        call: instanceHasMetadata
-        args:
-          metadata: instance.metadata
-          key: metadata_key
-          value: metadata_value
-        result: metadata_value_found
 
-    - choose_action:
-        switch:
-          - condition: ${metadata_value_found}
-            return: true
-          - condition: ${sys.now() - start_time < max_duration_sec}
-            steps:
-              - sleep:
-                  call: sys.sleep
-                  args:
-                    seconds: ${polling_interval_sec}
-              - recurse:
-                  call: waitForInstanceMetadata
-                  args:
-                    project: ${project}
-                    zone: ${zone}
-                    instance_name: ${instance_name}
-                    metadata_key: ${metadata_key}
-                    metadata_value: ${metadata_value}
-                    start_time: ${start_time}
-                    max_duration_sec: ${max_duration_sec}
-                    polling_interval_sec: ${polling_interval_sec}
-          - condition: true
-            return: false
+waitForInstanceMetadata:
+  params: [project, zone, instance_name, metadata_key, metadata_value, max_duration_sec, polling_interval_sec]
+  steps:
+    - initialize_variables:
+        assign:
+          - start_time: ${sys.now()}
+    - loop_until_timeout_or_found:
+        for:
+          value: i
+          range: ${[0, max_duration_sec // polling_interval_sec]}
+          steps:
+            - get_instance_data:
+                call: googleapis.compute.v1.instances.get
+                args:
+                  project: ${project}
+                  zone: ${zone}
+                  instance: ${instance_name}
+                result: instance
+            - find_instance_metadata:
+                call: instanceHasMetadata
+                args:
+                  metadata: ${instance.metadata}
+                  key: metadata_key
+                  value: metadata_value
+                result: metadata_value_found
+            - check_metadata_found:
+                switch:
+                  - condition: ${metadata_value_found}
+                    return: true
+                  - condition: true
+                    assign:
+                      - i: ${i + 1}
+            - check_timeout_condition:
+                switch:
+                  - condition: ${sys.now() - start_time >= max_duration_sec}
+                    return: false
+            - sleep_step:
+                call: sys.sleep
+                args:
+                  seconds: ${polling_interval_sec}
+    - end_of_loop:
+        return: false
 
 
 instanceHasMetadata:
@@ -185,23 +260,6 @@ instanceHasMetadata:
     - end_of_loop_step:
         return: false
 
-
-bucketHasData:
-  params: [bucket]
-  steps:
-    - list_objects:
-        call: http.get
-        args:
-          url: ${"https://storage.googleapis.com/storage/v1/b/" + bucket + "/o"}
-          auth:
-            type: OAuth2
-        result: bucket_data
-    - check_objects:
-        switch:
-          - condition: ${len(bucket_data.items) > 0}
-            return: true
-          - condition: ${len(bucket_data.items) == 0}
-            return: false
 
 error:
   params: [error]
