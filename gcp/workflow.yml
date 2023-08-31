@@ -69,7 +69,7 @@ executeTranscriptionSteps:
                   project: ${project}
                   zone: ${zone}
                   instance_name: ${instance_name}
-                  metadata_key: "application-state"
+                  metadata_key: "application-status"
                   metadata_value: "DONE"
                   max_duration_sec: 14400
                   polling_interval_sec: 60
