@@ -33,7 +33,7 @@ COPY requirements.txt /app/
 RUN pip3 install --upgrade --no-cache-dir -r requirements.txt
 
 # Copy application files
-COPY src/transcription-engine/* data/test-audio-128kbps.mp3 /app/
+COPY src/* data/test-audio-128kbps.mp3 /app/
 
 # Set tini as the entry point and run transcript.py
 ENTRYPOINT ["/usr/bin/tini", "--", "python3", "/app/transcribe_test.py"]
