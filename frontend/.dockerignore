@@ -1,5 +1,7 @@
 # .dockerignore
 
+.secrets/
+
 # Ignore git and version control
 .git/
 .gitignore

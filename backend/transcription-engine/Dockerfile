@@ -22,6 +22,7 @@ RUN apt-get update -y && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && ln -sf /usr/bin/python3.10 /usr/bin/python3 \
+    && ln -sf /usr/bin/python3.10 /usr/bin/python \
     && ln -sf $(which pip) /usr/local/bin/pip3 \
     && ln -sf $(which pip) /usr/local/bin/pip3.10
 
@@ -33,7 +34,7 @@ COPY requirements.txt /app/
 RUN pip3 install --upgrade --no-cache-dir -r requirements.txt
 
 # Copy application files
-COPY src/* data/test-audio-128kbps.mp3 /app/
+COPY src/ data/test-audio-128kbps.mp3 /app/
 
 # Set tini as the entry point and run transcript.py
-ENTRYPOINT ["/usr/bin/tini", "--", "python3", "/app/transcribe_test.py"]
+ENTRYPOINT ["/usr/bin/tini", "--", "python3", "/app/transcribe.py"]

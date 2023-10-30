@@ -1,0 +1,123 @@
+/* index.html specific style definitions */
+
+/* Drop zone styles */
+#drop_zone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px dashed #666;
+    width: 100%;
+    height: 150px;
+    text-align: center;
+    margin-bottom: 20px;
+    color: rgb(235, 235, 235);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#drop_zone:hover {
+    background-color: #666;
+}
+
+#drop_zone i {
+    margin-right: 10px;
+}
+
+#task {
+    margin-top: 30px;
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #1C768F;
+    border-radius: 5px;
+    font-weight: 500;
+}
+
+.form-section {
+    margin-top: 40px;
+    margin-bottom: 20px;
+}
+
+#start_recording {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#start_recording .timer {
+    margin-left: 10px;
+    background-color: #E60000;
+    color: rgb(235, 235, 235);
+    border-radius: 5px;
+    padding: 0px 5px;
+}
+
+#file_button i, #start_recording i, #stop_recording i {
+    margin-right: 8px;
+}
+
+#upload-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* File list and email styling */
+#file_list, #email {
+    margin-top: 30px;
+}
+
+#file_list {
+    margin-top: 30px;
+}
+
+#file_table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#file_table th, #file_table td {
+    border: none;
+    padding: 8px;
+    text-align: left;
+}
+
+#file_table th {
+    background-color: #1C768F;
+    color: #FFF;
+}
+
+.filename-cell {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: right; /* Align file name to the right */
+}
+
+.button-cell {
+    text-align: left; /* Align action buttons to the left */
+    float: right;
+}
+
+.file-button {
+    background-color: rgb(14, 148, 190);
+    color: #FFFFFF;
+    border: none;
+    padding: 8px 12px; /* Smaller padding for smaller buttons */
+    border-radius: 5px;
+    margin-right: 5px; /* Space between action buttons */
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.3s;
+}
+
+.file-button i {
+    margin-right: 5px;
+}
+
+.file-button:hover {
+    background-color: #17648A;
+}

@@ -1,0 +1,28 @@
+{
+    "name": "frontend-dev-container",
+    "image": "europe-west4-docker.pkg.dev/kirjuri/kirjuri-frontend/kirjuri-frontend",
+    "workspaceMount": "source=${localWorkspaceFolder}/frontend,target=/workspace,type=bind",
+    "workspaceFolder": "/workspace",
+    "postCreateCommand": "cd /workspace/src && gunicorn -b 0.0.0.0:8080 app:app --reload --daemon",
+    "runArgs": [
+        "-p", "8080:8080"
+    ],
+    "remoteEnv": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "/workspace/.secrets/service-account.json",
+        "BASIC_AUTH_USERNAME": "admin",
+        "BASIC_AUTH_PASSWORD": "password",
+        "KIRJURI_DEBUG": "true",
+        "KIRJURI_USE_RELOADER": "true"
+    },
+    "customizations": {
+        "vscode": {
+            "settings": { 
+				"python.defaultInterpreterPath": "/usr/local/bin/python"
+            },
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance"
+            ]
+        }
+    }
+}

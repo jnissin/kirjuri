@@ -4,28 +4,28 @@ main:
     - init:
         assign:
           - project: ${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}
-    - get_container_name_secret:
-        call: googleapis.secretmanager.v1.projects.secrets.versions.accessString
-        args:
-          project_id: ${project}
-          secret_id: "kirjuri-transcription-engine-container-name"
-          version: "latest"
-        result: container_name
-    - get_startup_script_gs_uri_secret:
-        call: googleapis.secretmanager.v1.projects.secrets.versions.accessString
-        args:
-          project_id: ${project}
-          secret_id: "kirjuri-transcription-engine-startup-script-gs-uri"
-          version: "latest"
-        result: startup_script_gs_uri
+          - container_name: "europe-west4-docker.pkg.dev/kirjuri/kirjuri-transcription-engine/kirjuri-transcription-engine:latest"
+          - startup_script_gs_uri: "gs://kirjuri-scripts/transcription-engine/startup.sh"
     - check_for_ingestion_data:
         call: bucketHasData
         args:
           bucket: "kirjuri-ingestion-db"
         result: ingestion_has_data
+    - check_if_instance_exists:
+        try:
+          call: googleapis.compute.v1.instances.get
+          args:
+            project: ${project}
+            zone: ${args.zone}
+            instance: ${args.instance_name}
+          result: existing_instance
+        except:
+          as: ex
+          assign:
+            - existing_instance: null
     - choose_action:
         switch:
-          - condition: ${ingestion_has_data}
+          - condition: ${ingestion_has_data and existing_instance == null}
             steps:
               - execute_transcription_steps:
                   call: executeTranscriptionSteps
@@ -154,13 +154,14 @@ createComputeGPUVM:
             serviceAccounts:
               - email: "905014932322-compute@developer.gserviceaccount.com"
                 scopes:
-                  - "https://www.googleapis.com/auth/devstorage.read_only"
+                  - "https://www.googleapis.com/auth/devstorage.read_write"
                   - "https://www.googleapis.com/auth/logging.write"
                   - "https://www.googleapis.com/auth/monitoring.write"
                   - "https://www.googleapis.com/auth/servicecontrol"
                   - "https://www.googleapis.com/auth/service.management.readonly"
                   - "https://www.googleapis.com/auth/trace.append"
                   - "https://www.googleapis.com/auth/compute"
+                  - "https://www.googleapis.com/auth/cloud-platform"
         result: api_response
     - return_response:
         return: ${api_response}
@@ -220,7 +221,7 @@ waitForInstanceMetadata:
                   instance: ${instance_name}
                 result: instance
             - find_instance_metadata:
-                call: instanceHasMetadata
+                call: instanceMetadataHasKeyValue
                 args:
                   metadata: ${instance.metadata}
                   key: ${metadata_key}
@@ -245,7 +246,7 @@ waitForInstanceMetadata:
         return: false
 
 
-instanceHasMetadata:
+instanceMetadataHasKeyValue:
   params: [metadata, key, value]
   steps:
     - loop_step:

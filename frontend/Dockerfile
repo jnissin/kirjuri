@@ -6,14 +6,17 @@ ENV FLASK_RUN_HOST=0.0.0.0
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential && \
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+    build-essential \
+    tini \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY src/* /app
+COPY src/ /app/
 
-ENTRYPOINT ["/tini", "--"]
-CMD ["flask", "run"]
+# Use tini to handle process signals and then launch the Gunicorn server
+ENTRYPOINT ["tini", "--"]
+CMD ["gunicorn", "-b", "0.0.0.0:8080", "app:app"]

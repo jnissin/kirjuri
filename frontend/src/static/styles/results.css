@@ -1,0 +1,32 @@
+/* results.html specific style definitions */
+
+.speaker-segment {
+    margin-top: 1.2em;
+    margin-bottom: 1.2em;
+}
+
+span.segment-info {
+    font-weight: lighter;
+}
+
+span.confidence-segment-high {
+}
+
+span.confidence-segment-normal {
+    text-decoration: underline;
+    text-decoration-color: #d9a737;
+    text-underline-offset: 0.2em;
+}
+
+span.confidence-segment-low {
+    text-decoration: underline;
+    text-decoration-color: #a53838;
+    text-underline-offset: 0.2em;
+}
+
+#download-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

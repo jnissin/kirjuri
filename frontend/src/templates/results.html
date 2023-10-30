@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>kirjuri.net</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/results.css')}}">
+<style>
+
+    </style>
+</head>
+<body>
+    <div id="results-container">
+        <h1>Transcriptions</h1>
+        
+        {% for file_name, result_json in transcription_results.items() %}
+        <div class="transcription-file">
+            <h2>{{ file_name }}</h2>
+
+            <div class="transcription-segments">
+                {% for segment in result_json["segments"] %}
+                <div class="speaker-segment">
+                    <span class="segment-info">[{{ segment["start"] | format_segment_timestamp }} - {{ segment["end"] | format_segment_timestamp }}] {{ segment.get("speaker", "_") }}:</span>
+                    {% for confidence_segment in segment["confidence_segments"] %}
+                        <span class="confidence-segment-{{ confidence_segment['confidence_class']}}">
+                            {% for word in confidence_segment["words"] %}
+                                <span title="confidence: {{ word['score'] }}">{{ word["word"] }}</span>
+                            {% endfor %}
+                        </span>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <hr />
+        <br />
+
+        <a href="{{ url_for('download_transcription_results', file_name=file_name) }}" style="text-decoration: none;">
+            <button id="download-button">Download Results</button>
+        </a>
+    </div>
+</body>
+</html>

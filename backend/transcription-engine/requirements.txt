@@ -1,5 +1,8 @@
 torch==2.0.1
 torchaudio==2.0.2
 torchvision==0.15.2
-git+https://github.com/m-bain/whisperx.git
+google-cloud-storage==2.10.0
+google-cloud-logging==3.6.0
+git+https://github.com/m-bain/whisperx.git@49e0130e4e0c0d99d60715d76e65a71826a97109
 protobuf==3.19.6
+mailjet_rest==1.3.4

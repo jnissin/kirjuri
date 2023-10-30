@@ -1,0 +1,20 @@
+{
+    "name": "backend-transcription-engine-dev-container",
+    "image": "europe-west4-docker.pkg.dev/kirjuri/kirjuri-transcription-engine/kirjuri-transcription-engine",
+    "workspaceMount": "source=${localWorkspaceFolder}/backend/transcription-engine,target=/workspace,type=bind",
+    "workspaceFolder": "/workspace",
+    "remoteEnv": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "/workspace/.secrets/service-account.json"
+    },
+    "customizations": {
+        "vscode": {
+            "settings": { 
+				"python.defaultInterpreterPath": "/usr/bin/python3.10"
+            },
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance"
+            ]
+        }
+    }
+}

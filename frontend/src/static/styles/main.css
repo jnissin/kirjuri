@@ -1,0 +1,57 @@
+/* main style definitions */
+
+html {
+    max-width: 40em;
+    margin: auto;
+    background: rgb(28, 30, 30);
+    color: rgb(235, 235, 235);
+    font-family: Avenir Next, sans-serif;
+}
+
+body {
+    line-height: 1.6;
+    margin: 0 1.8em 8em 1.8em;
+}
+
+h1 {
+    font-family: AvenirNext-Bold;
+    font-size: 175%;
+    margin: 0.6em 0px 0.3em;
+}
+
+h2 {
+    font-family: AvenirNext-DemiBold;
+    font-size: 137.5%;
+    margin: 1em 0px 0.1em;
+}
+
+hr {
+    width: 70%;
+    opacity: 0.4;
+}
+
+p {
+    margin: 0px;
+}
+
+button, input[type="submit"] {
+    background-color: rgb(14, 148, 190);
+    color: #FFFFFF;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 5px;
+    margin-right: 15px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.3s;
+}
+
+button:hover, input[type="submit"]:hover {
+    background-color: #17648A;
+}
+
+button[disabled], input[type="submit"][disabled] {
+    cursor: not-allowed;
+    opacity: 0.35;
+    pointer-events: none;
+}

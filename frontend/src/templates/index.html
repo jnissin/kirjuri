@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>kirjuri.net</title>
+    <!-- Font awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/index.css') }}">
+</head>
+<body>
+    <form id="upload-form" action="/" method="post" enctype="multipart/form-data">
+        <h1>Kirjuri</h1>
+        <p>
+            Kirjuri is a minimalistic multilingual audio transcription service powered by the OpenAI Whisper speech-to-text model.
+        </p>
+
+        <!-- Audio Input Form Section -->
+        <div class="form-section">
+            <h2>Add Audio</h2>
+            <div id="drop_zone">
+                <i class="fas fa-cloud-upload-alt fa-2x"></i>
+                <span>Drop audio files here or</span>
+            </div>
+            <input type="file" id="audio_file" name="audio_file" accept="audio/*" multiple style="display:none;">
+            <button type="button" id="start_recording"><i class="fas fa-microphone"></i> Start Recording <span class="timer"></span></button>
+            <div id="file_list"></div>
+        </div>
+
+        <!-- Task Parameters Form Section -->
+        <div class="form-section">
+            <h2>Task Parameters</h2>
+            <label for="email"><i class="fas fa-envelope"></i> Email (optional):</label>
+            <input type="email" id="email" name="email">
+            <br>
+            <label for="task"><i class="fas fa-tasks"></i> Select Task:</label>
+            <select name="task" id="task">
+                <option value="transcription">Transcription</option>
+                <option value="diarization">Diarization</option>
+            </select>
+        </div>
+
+        <!-- Upload Button -->
+        <div class="form-section">
+            <input id="upload-button" type="submit" value="Upload" disabled>
+        </div>
+    </form>
+
+    <!-- Custom scripts -->
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+</body>
+</html>
