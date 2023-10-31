@@ -1,7 +1,7 @@
 /* main style definitions */
 
 html {
-    max-width: 40em;
+    max-width: 60em;
     margin: auto;
     background: rgb(28, 30, 30);
     color: rgb(235, 235, 235);
@@ -10,7 +10,7 @@ html {
 
 body {
     line-height: 1.6;
-    margin: 0 1.8em 8em 1.8em;
+    margin: 3em 1.8em 4em 1.8em;
 }
 
 h1 {
