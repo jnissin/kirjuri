@@ -21,14 +21,18 @@
             <div class="transcription-segments">
                 {% for segment in result_json["segments"] %}
                 <div class="speaker-segment">
-                    <span class="segment-info">[{{ segment["start"] | format_segment_timestamp }} - {{ segment["end"] | format_segment_timestamp }}] {{ segment.get("speaker", "_") }}:</span>
-                    {% for confidence_segment in segment["confidence_segments"] %}
-                        <span class="confidence-segment-{{ confidence_segment['confidence_class']}}">
-                            {% for word in confidence_segment["words"] %}
-                                <span title="confidence: {{ word['score'] }}">{{ word["word"] }}</span>
-                            {% endfor %}
-                        </span>
-                    {% endfor %}
+                    <span class="segment-info">[{{ segment["start"] | format_segment_timestamp }} - {{ segment["end"] | format_segment_timestamp }}] {{ segment.get("speaker") or "" }}:</span>
+                    {% if segment["confidence_segments"] | length > 0 %}
+                        {% for confidence_segment in segment["confidence_segments"] %}
+                            <span class="confidence-segment-{{ confidence_segment['confidence_class']}}">
+                                {% for word in confidence_segment["words"] %}
+                                    <span title="confidence: {{ word['score'] }}">{{ word["word"] }}</span>
+                                {% endfor %}
+                            </span>
+                        {% endfor %}
+                    {% else %}
+                        {{ segment["text"] }}
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
